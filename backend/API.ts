@@ -11,7 +11,7 @@ app.use(express.json()); // Middleware to parse JSON
 
 // Open SQLite database
 const dbPromise = open({
-    filename: 'data/data.db',
+    filename: 'data/data_2.db',
     driver: sqlite3.Database
 });
 

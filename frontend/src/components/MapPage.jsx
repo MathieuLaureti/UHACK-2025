@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import Legend from '../components/Legend';
-import 'leaflet/dist/leaflet.css';
+import React, { useState, useEffect } from 'react';
 import L from 'leaflet';
-import Login from '../components/login';
+import 'leaflet/dist/leaflet.css';
+import Legend from './Legend';
+import Login from './login';
 
 const MapPage = () => {
   const [layersByType, setLayersByType] = useState({});
@@ -10,25 +10,25 @@ const MapPage = () => {
 
   useEffect(() => {
     let map;
-  
+
     if (L.DomUtil.get('map') != null) {
-      L.DomUtil.get('map')._leaflet_id = null; // Reset id (problème vite hot reload)
+      L.DomUtil.get('map')._leaflet_id = null;
     }
-  
+
     map = L.map('map').setView([45.4765, -75.7013], 13);
-  
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
-  
+
     setMapInstance(map);
-  
+
     fetch('http://localhost:3000/api/VOIE_PUBLIQUE')
       .then(response => response.json())
       .then(data => {
+        console.log('fetched data', data);
         const newLayers = {};
-        //console.log("fetched data", data);
-        console.log("fetched data", data);
+
         function getColor(hierarchie) {
           switch (hierarchie) {
             case 'Autoroute': return '#ffff36';
@@ -40,24 +40,88 @@ const MapPage = () => {
             default: return '#000000';
           }
         }
-  
-        const geoJsonLayer = L.geoJSON(data, {
-          style: function (feature) {
-            return {
-              color: getColor(feature.properties.HIERARCHI),
-              weight: 3,
-              opacity: 0.8
-            };
-          },
-          onEachFeature: function (feature, layer) {
-            const type = feature.properties.HIERARCHI || 'Autre';
-  
+
+        function fixCoordinates(coords) {
+          if (!Array.isArray(coords)) return [];
+          if (typeof coords[0] === 'number') {
+            const newCoords = [];
+            for (let i = 0; i < coords.length; i += 2) {
+              newCoords.push([coords[i], coords[i + 1]]);
+            }
+            return newCoords;
+          }
+          return coords.map(coord => {
+            if (Array.isArray(coord) && coord.length > 2) {
+              return [coord[0], coord[1]];
+            }
+            return coord;
+          });
+        }
+
+        let ignoredRoutes = 0;
+
+        const wrappedData = {
+          type: "FeatureCollection",
+          features: data
+            .map(item => {
+              try {
+                const coords = JSON.parse(item.coordinates);
+                const cleanCoords = fixCoordinates(coords);
+
+                if (!Array.isArray(cleanCoords) || cleanCoords.length < 2) {
+                  console.warn("Coordonnées invalides pour:", item.NOM_TOPO);
+                  ignoredRoutes++;
+                  return null;
+                }
+
+                const allPointsValid = cleanCoords.every(
+                  pt => Array.isArray(pt) && pt.length === 2 && typeof pt[0] === 'number' && typeof pt[1] === 'number'
+                );
+
+                if (!allPointsValid) {
+                  console.warn("Points invalides pour:", item.NOM_TOPO, cleanCoords);
+                  ignoredRoutes++;
+                  return null;
+                }
+
+                return {
+                  type: "Feature",
+                  geometry: {
+                    type: "LineString",
+                    coordinates: cleanCoords
+                  },
+                  properties: {
+                    NOM_TOPO: item.NOM_TOPO,
+                    HIERARCHI: item.HIERARCHI
+                  }
+                };
+              } catch (e) {
+                console.error("Erreur parsing pour:", item.NOM_TOPO, item.coordinates, e);
+                ignoredRoutes++;
+                return null;
+              }
+            })
+            .filter(f => f !== null)
+        };
+
+        console.log(`Nombre de routes ignorées: ${ignoredRoutes}`);
+
+        const geoJsonLayer = L.geoJSON(wrappedData, {
+          style: feature => ({
+            color: getColor(feature?.properties?.HIERARCHI),
+            weight: 5,
+            opacity: 1,
+            fillOpacity: 0
+          }),
+          onEachFeature: (feature, layer) => {
+            const type = feature.properties?.HIERARCHI || 'Autre';
+
             if (!newLayers[type]) {
               newLayers[type] = [];
             }
             newLayers[type].push(layer);
-  
-            if (feature.properties && feature.properties.NOM_TOPO) {
+
+            if (feature.properties?.NOM_TOPO) {
               const tooltipContent = document.createElement('div');
               tooltipContent.textContent = feature.properties.NOM_TOPO;
               layer.bindTooltip(tooltipContent, {
@@ -65,25 +129,23 @@ const MapPage = () => {
                 direction: 'top'
               });
             }
-  
+
             layer.addTo(map);
           }
         });
-  
+
         setLayersByType(newLayers);
       })
       .catch(error => {
         console.error('Erreur lors du chargement des voies publiques:', error);
       });
-  
-    // TRÈS IMPORTANT : détruire la carte proprement si le composant se démonte
+
     return () => {
       if (map) {
-        map.remove();  // => détruit tous les handlers (drag, zoom etc.)
+        map.remove();
       }
     };
   }, []);
-  
 
   const toggleTypeVisibility = (typeName) => {
     if (!layersByType[typeName]) return;
@@ -115,7 +177,6 @@ const MapPage = () => {
         width: '100%',
         justifyContent: 'center'
       }}>
-        {/* Map container */}
         <div style={{
           width: '800px',
           height: '700px',
@@ -129,7 +190,6 @@ const MapPage = () => {
           }}></div>
         </div>
 
-        {/* Legend */}
         <div style={{
           display: 'flex',
           flexDirection: 'column'
