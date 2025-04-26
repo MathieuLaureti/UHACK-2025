@@ -1,16 +1,16 @@
 import React from 'react';
 
 const hierarchies = [
-  { name: 'Autoroute', color: 'purple' },
-  { name: 'Artère principale', color: 'cyan' },
-  { name: 'Artère secondaire', color: 'green' },
-  { name: 'Collectrice principale', color: 'red' },
-  { name: 'Collectrice secondaire', color: 'orange' },
-  { name: 'Rue locale', color: 'blue' },
-  { name: 'Autre', color: 'yellow' }
+  { name: 'Autoroute', color: '#ffff36' },
+  { name: 'Artère principale', color: '#f781bf' },
+  { name: 'Artère secondaire', color: '#ff7f00' },
+  { name: 'Collectrice principale', color: '#4daf4a' },
+  { name: 'Collectrice secondaire', color: '#984ea3' },
+  { name: 'Rue locale', color: '#377eb8' },
+  { name: 'Autre', color: '#000000' }
 ];
 
-const Legend = () => {
+const Legend = ({ toggleTypeVisibility }) => {
   return (
     <div style={{
       width: '200px',
@@ -20,7 +20,7 @@ const Legend = () => {
       fontSize: '14px',
       height: 'fit-content'
     }}>
-<h4>Types de voies</h4>
+      <h4>Types de voies</h4>
       {hierarchies.map((item, index) => (
         <button
           key={index}
