@@ -5,6 +5,7 @@
   "main": "backend/API.ts",
   "scripts": {
     "start": "ts-node API.ts",
+    "dev": "ts-node API.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

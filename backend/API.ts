@@ -12,7 +12,9 @@ const dbPromise = open({
     driver: sqlite3.Database
 });
 
-// Route to fetch all rows from a specific table
+
+// API ROUTE #1
+// Get all rows from a table
 app.get('/api/:table', async (req: Request, res: Response) => {
     const tableName = req.params.table;
 
@@ -26,7 +28,8 @@ app.get('/api/:table', async (req: Request, res: Response) => {
     }
 });
 
-// Route to fetch a specific row by ID (if the table has an ID column)
+// API ROUTE #2
+// Get a specific row from a table
 app.get('/api/:table/:id', async (req: Request, res: Response) => {
     const tableName = req.params.table;
     const id = req.params.id;
@@ -45,6 +48,8 @@ app.get('/api/:table/:id', async (req: Request, res: Response) => {
     }
 });
 
+// API ROUTE #3
+// Get a specific attribute of a row from a table
 app.get('/api/:table/:id/:attribute', async (req: Request, res: Response) => {
     const tableName = req.params.table;
     const id = req.params.id;
