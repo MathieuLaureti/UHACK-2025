@@ -3,10 +3,12 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import Legend from './Legend';
 import Login from './login';
+import StreetSearch from './StreetSearch';
 
 const MapPage = () => {
   const [layersByType, setLayersByType] = useState({});
   const [mapInstance, setMapInstance] = useState(null);
+  const [streetsData, setStreetsData] = useState([]); // keep streets list separately
 
   useEffect(() => {
     let map;
@@ -26,7 +28,7 @@ const MapPage = () => {
     fetch('http://localhost:3000/api/VOIE_PUBLIQUE')
       .then(response => response.json())
       .then(data => {
-        console.log('fetched data', data);
+        console.log('Fetched data:', data);
         const newLayers = {};
 
         function getColor(hierarchie) {
@@ -69,7 +71,6 @@ const MapPage = () => {
                 const cleanCoords = fixCoordinates(coords);
 
                 if (!Array.isArray(cleanCoords) || cleanCoords.length < 2) {
-                  console.warn("Coordonnées invalides pour:", item.NOM_TOPO);
                   ignoredRoutes++;
                   return null;
                 }
@@ -79,7 +80,6 @@ const MapPage = () => {
                 );
 
                 if (!allPointsValid) {
-                  console.warn("Points invalides pour:", item.NOM_TOPO, cleanCoords);
                   ignoredRoutes++;
                   return null;
                 }
@@ -96,15 +96,12 @@ const MapPage = () => {
                   }
                 };
               } catch (e) {
-                console.error("Erreur parsing pour:", item.NOM_TOPO, item.coordinates, e);
                 ignoredRoutes++;
                 return null;
               }
             })
             .filter(f => f !== null)
         };
-
-        console.log(`Nombre de routes ignorées: ${ignoredRoutes}`);
 
         const geoJsonLayer = L.geoJSON(wrappedData, {
           style: feature => ({
@@ -135,9 +132,11 @@ const MapPage = () => {
         });
 
         setLayersByType(newLayers);
+        setStreetsData(wrappedData.features); // set streets data here
+        console.log('Set streetsData:', wrappedData.features); // log loaded streets
       })
       .catch(error => {
-        console.error('Erreur lors du chargement des voies publiques:', error);
+        console.error('Erreur de chargement:', error);
       });
 
     return () => {
@@ -192,9 +191,13 @@ const MapPage = () => {
 
         <div style={{
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          gap: '20px',
+          maxHeight: '700px',
+          overflowY: 'auto'
         }}>
           <Legend toggleTypeVisibility={toggleTypeVisibility} />
+          <StreetSearch streetsData={streetsData} map={mapInstance} />
           <Login />
         </div>
       </div>
