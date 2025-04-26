@@ -16,14 +16,20 @@ Feature principale : Calendrier pour les différentes rues favorites
 
 Feature à voir : ajouter des trajet en favoris (pourrait également être pertinent pour trouver les voies les plus empruntées et donc à déneiger en priorité)
 
+utilisation de leaflet pour les intraction avec la map et ajouter les favoris. (Parfait pour mobile)
+
 ## Étape 2 : Plan
 
 ### Choix des technologies 
 
 #### Backend
+ - node.js
  - express.js
  - sqlite
 
+#### Front end
+ - react.js
+   
 ### Plan
 
 #### Étape 1
