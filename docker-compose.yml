@@ -1,18 +1,28 @@
 version: '3.8'
+
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
     ports:
       - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
     environment:
-      - NODE_ENV=production
-    # or use 'image: your-backend-image' if prebuilt
+      - NODE_ENV=development
+    command: npm run dev
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
     ports:
       - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
+    command: npm run dev
     depends_on:
       - backend
