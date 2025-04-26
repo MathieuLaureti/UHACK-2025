@@ -1,4 +1,4 @@
-### Problématique 
+## Étape 0 : Problématique 
  - "Manque d’information entre les citoyens et la ville dans le processus de déneigement" (2)
 #### Info supplémentaires 
 •	Les déneigeurs municipaux (villes/sous-traitant) et les déneigeurs privés (commerciaux/résidentiel) doivent coexister et sont parfois même en communication pour coordonner leurs opérations quotidiennes lorsque c’est possible. Dans le meilleur des cas, les déneigeurs privés arrivent à suivre les opérateurs municipaux pour retirer les remblais générés par le déneigement des rues. Dans les moins bons cas, les déneigeurs doivent revenir sur leurs pas pour refaire le nettoyage.
