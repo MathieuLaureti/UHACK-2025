@@ -7,6 +7,7 @@ const hierarchies = [
   { name: 'Collectrice principale', color: '#4daf4a' },
   { name: 'Collectrice secondaire', color: '#984ea3' },
   { name: 'Rue locale', color: '#377eb8' },
+  { name: 'Trottoirs', color: '#bbbbbb' }, // <-- AJOUT TROTTOIRS
   { name: 'Autre', color: '#000000' }
 ];
 
