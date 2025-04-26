@@ -18,6 +18,14 @@ Feature à voir : ajouter des trajet en favoris (pourrait également être perti
 
 utilisation de leaflet pour les intraction avec la map et ajouter les favoris. (Parfait pour mobile)
 
+
+Il est possible de filtrer les différents segments de la légende de couleur afin de répondre aux besoins spécifiques de l'individu. 
+
+   Ex : l'individu peut voir si la ville applique actuellement un sel sur les routes et traiter. Si c'est le cas, ce n'est pas le moment idéal pour sortir le chien. 
+
+   Ex : l'individu peut voir sur quelle rue il peut se stationner pour aller voir sa blonde.
+
+
 ## Étape 2 : Plan
 
 ### Choix des technologies 
