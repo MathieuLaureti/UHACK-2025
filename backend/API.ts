@@ -6,10 +6,9 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json()); // Middleware to parse JSON
-
 // Open SQLite database
 const dbPromise = open({
-    filename: 'backend/data/data.db',
+    filename: 'data/data.db',
     driver: sqlite3.Database
 });
 
