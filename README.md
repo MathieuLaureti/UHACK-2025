@@ -53,6 +53,15 @@ Il est possible de filtrer les différents segments de la légende de couleur af
 
    Ex : l'individu peut voir sur quelle rue il peut se stationner pour aller voir sa blonde.
 
+Nons voulons utuliser une code de couleur pour fair la distinction entre les different types de routes, trtoire et possiblement autre. Pour les utulisateurs ayant le daltonisme ça pourais être problemeatique donc de ce que nous avons trouver voici des codes de coulours HEX qui pourais être utile dans le cas d'utulisateurs avec la protanopie ou la deutéranopie. 
+
+Black         #000000    Dark Blue    #377eb8    Orange         #ff7f00    Sky Blue     #4daf4a
+Violet        #984ea3    Yellow       #ffff33    Pink           #f781bf    Light Grey   #999999
+Dark Red      #e41a1c    Turquoise    #00ced1    Brown          #a65628    Olive Green  #808000
+Light Green   #66c2a5    Teal         #008080    Light Purple   #beaed4    Gold         #ffd700
+Dark Cyan     #1b9e77    Light Pink   #fbb4ae    Soft Blue      #8da0cb    Soft Green   #a6d854
+
+
 
 ## Étape 2 : Plan
 
