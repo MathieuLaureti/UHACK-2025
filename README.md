@@ -1,3 +1,31 @@
+## Commandes importantes
+### Run frontend 
+cd frontend; npm run dev
+### Run backend 
+cd backend; npm run dev
+### Build Docker
+docker-compose build -no-cache
+### starting Docker
+docker-compose up
+
+## API definition
+l'API est trouvable à l'adresse : localhost:3000/api/
+
+### localhost:3000/api/{table}
+Retourne la table demandée, 1 table = 1 fichier JSON
+#### liste des tables :
+- ADRESSE
+- COMPTAGE
+- LIEU_PUBLIC
+- TROTTOIR
+- VOIE_PUBLIQUE
+
+### localhost:3000/api/{table}/{id}
+Retourne une ligne specifique d'une table choisi (la recherche est faite selon le CODEID)
+
+### localhost:3000/api/{table}/{id}/{attribut}
+Retourne un Attribut spécifique d'une ligne choisi sur la table de notre choix.
+
 ## Étape 0 : Problématique 
  - "Manque d’information entre les citoyens et la ville dans le processus de déneigement" (2)
 #### Info supplémentaires 
@@ -37,6 +65,9 @@ Il est possible de filtrer les différents segments de la légende de couleur af
 
 #### Front end
  - react.js
+
+#### Infrastructure
+ - Docker
    
 ### Plan
 
