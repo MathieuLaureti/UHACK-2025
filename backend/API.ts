@@ -72,6 +72,36 @@ app.get('/api/:table/:id/:attribute', async (req: Request, res: Response) => {
     }
 });
 
+// API ROUTE #4
+// Get a specific attribute of a row from a table (based on Name)
+app.get('/api/name/:table/:attribute/:value', async (req: Request, res: Response) => {
+    const tableName = req.params.table;
+    const attribute = req.params.attribute;
+    const value = req.params.value;
+
+    try {
+        const db = await dbPromise;
+
+        // Check if the table contains any rows with the specified attribute
+        const rowsExist = await db.get(`SELECT * FROM ${tableName} WHERE ${attribute} IS NOT NULL`);
+        if (!rowsExist) {
+            res.status(404).json({ error: `No rows found in table '${tableName}' with column '${attribute}'.` });
+            return; // Explicitly return to avoid further execution
+        }
+
+        // Retrieve all rows where the value matches in the specified column
+        const rows = await db.all(`SELECT * FROM ${tableName} WHERE ${attribute} = ?`, [value]);
+        if (rows.length > 0) {
+            res.json(rows); // Return all matching rows
+        } else {
+            res.status(404).json({ error: `No rows found in table '${tableName}' where '${attribute}' equals '${value}'.` });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: `Failed to fetch data from the table '${tableName}'.` });
+    }
+});
+
 // Example route
 app.get('/', (req: Request, res: Response) => {
     res.send('Bird is the word ddd');
