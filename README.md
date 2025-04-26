@@ -1,3 +1,31 @@
+## Commandes importantes
+### Run frontend 
+cd frontend; npm run dev
+### Run backend 
+cd backend; npm run dev
+### Build Docker
+docker-compose build -no-cache
+### starting Docker
+docker-compose up
+
+## API definition
+l'API est trouvable à l'adresse : localhost:3000/api/
+
+### localhost:3000/api/{table}
+Retourne la table demandée, 1 table = 1 fichier JSON
+#### liste des tables :
+- ADRESSE
+- COMPTAGE
+- LIEU_PUBLIC
+- TROTTOIR
+- VOIE_PUBLIQUE
+
+### localhost:3000/api/{table}/{id}
+Retourne une ligne specifique d'une table choisi (la recherche est faite selon le CODEID)
+
+### localhost:3000/api/{table}/{id}/{attribut}
+Retourne un Attribut spécifique d'une ligne choisi sur la table de notre choix.
+
 ## Étape 0 : Problématique 
  - "Manque d’information entre les citoyens et la ville dans le processus de déneigement" (2)
 #### Info supplémentaires 
@@ -18,6 +46,23 @@ Feature à voir : ajouter des trajet en favoris (pourrait également être perti
 
 utilisation de leaflet pour les intraction avec la map et ajouter les favoris. (Parfait pour mobile)
 
+
+Il est possible de filtrer les différents segments de la légende de couleur afin de répondre aux besoins spécifiques de l'individu. 
+
+   Ex : l'individu peut voir si la ville applique actuellement un sel sur les routes et traiter. Si c'est le cas, ce n'est pas le moment idéal pour sortir le chien. 
+
+   Ex : l'individu peut voir sur quelle rue il peut se stationner pour aller voir sa blonde.
+
+Nons voulons utuliser une code de couleur pour fair la distinction entre les different types de routes, trtoire et possiblement autre. Pour les utulisateurs ayant le daltonisme ça pourais être problemeatique donc de ce que nous avons trouver voici des codes de coulours HEX qui pourais être utile dans le cas d'utulisateurs avec la protanopie ou la deutéranopie. 
+
+Black         #000000    Dark Blue    #377eb8    Orange         #ff7f00    Sky Blue     #4daf4a
+Violet        #984ea3    Yellow       #ffff33    Pink           #f781bf    Light Grey   #999999
+Dark Red      #e41a1c    Turquoise    #00ced1    Brown          #a65628    Olive Green  #808000
+Light Green   #66c2a5    Teal         #008080    Light Purple   #beaed4    Gold         #ffd700
+Dark Cyan     #1b9e77    Light Pink   #fbb4ae    Soft Blue      #8da0cb    Soft Green   #a6d854
+
+
+
 ## Étape 2 : Plan
 
 ### Choix des technologies 
@@ -29,6 +74,9 @@ utilisation de leaflet pour les intraction avec la map et ajouter les favoris. (
 
 #### Front end
  - react.js
+
+#### Infrastructure
+ - Docker
    
 ### Plan
 
