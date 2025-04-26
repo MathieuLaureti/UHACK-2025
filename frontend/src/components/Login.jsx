@@ -48,7 +48,6 @@ function Login() {
         Se connecter
       </button>
     </form>
-    
   );
 }
 

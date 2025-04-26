@@ -71,7 +71,7 @@ app.get('/api/:table/:id/:attribute', async (req: Request, res: Response) => {
 
 // Example route
 app.get('/', (req: Request, res: Response) => {
-    res.send('Bird is the word');
+    res.send('Bird is the word ddd');
 });
 
 // Start server
