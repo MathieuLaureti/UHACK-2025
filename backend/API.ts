@@ -45,6 +45,25 @@ app.get('/api/:table/:id', async (req: Request, res: Response) => {
     }
 });
 
+app.get('/api/:table/:id/:attribute', async (req: Request, res: Response) => {
+    const tableName = req.params.table;
+    const id = req.params.id;
+    const attribute = req.params.attribute;
+
+    try {
+        const db = await dbPromise;
+        const row = await db.get(`SELECT ${attribute} FROM ${tableName} WHERE CODEID = ?`, [id]);
+        if (row && row[attribute] !== undefined) {
+            res.json({ [attribute]: row[attribute] });
+        } else {
+            res.status(404).json({ error: 'Attribute or row not found.' });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch data from the database.' });
+    }
+});
+
 // Example route
 app.get('/', (req: Request, res: Response) => {
     res.send('Bird is the word');
