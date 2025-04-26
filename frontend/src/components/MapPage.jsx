@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Legend from '../components/Legend';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import Login from '../components/login';
 
 const MapPage = () => {
   const [layersByType, setLayersByType] = useState({});
@@ -128,7 +129,13 @@ const MapPage = () => {
         </div>
 
         {/* Legend */}
-        <Legend toggleTypeVisibility={toggleTypeVisibility} />
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <Legend toggleTypeVisibility={toggleTypeVisibility} />
+          <Login />
+        </div>
       </div>
     </div>
   );
