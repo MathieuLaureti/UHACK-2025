@@ -1,0 +1,31 @@
+{
+  "name": "uhack-2025",
+  "version": "1.0.0",
+  "description": "- \"Manque d’information entre les citoyens et la ville dans le processus de déneigement\" (2)\r #### Info supplémentaires \r •\tLes déneigeurs municipaux (villes/sous-traitant) et les déneigeurs privés (commerciaux/résidentiel) doivent coexister et sont parfois même en communication pour coordonner leurs opérations quotidiennes lorsque c’est possible. Dans le meilleur des cas, les déneigeurs privés arrivent à suivre les opérateurs municipaux pour retirer les remblais générés par le déneigement des rues. Dans les moins bons cas, les déneigeurs doivent revenir sur leurs pas pour refaire le nettoyage.",
+  "main": "backend/API.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MathieuLaureti/UHACK-2025.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MathieuLaureti/UHACK-2025/issues"
+  },
+  "homepage": "https://github.com/MathieuLaureti/UHACK-2025#readme",
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.15.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
