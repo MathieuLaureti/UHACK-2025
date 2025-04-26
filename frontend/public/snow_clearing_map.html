@@ -93,24 +93,6 @@
             });
           }
         }).addTo(map);
-  
-        // === Légende intégré en innerhtml a modifier ===
-        const legend = L.control({ position: 'bottomright' });
-  
-        legend.onAdd = function (map) {
-          const div = L.DomUtil.create('div', 'info legend');
-          const hierarchies = ['Autoroute', 'Artère principale', 'Artère secondaire','Collectrice principale','Collectrice secondaire', 'Rue locale', 'Autre'];
-          const colors = ['purple','cyan','green', 'red', 'orange', 'blue', 'yellow'];
-  
-          div.innerHTML += '<h4>Types de voies</h4>';
-          for (let i = 0; i < hierarchies.length; i++) {
-            div.innerHTML +=
-              `<i style="background:${colors[i]}; width: 18px; height: 18px; display: inline-block; margin-right: 8px;"></i> ${hierarchies[i]}<br>`;
-          }
-          return div;
-        };
-  
-        legend.addTo(map);
       })
       .catch(error => {
         console.error('Erreur lors du chargement des voies publiques:', error);
