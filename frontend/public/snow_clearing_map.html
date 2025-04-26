@@ -47,26 +47,59 @@
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 </script>
-      <script>
-        // Charger JSON (verify que le json est dans le dossier /public sinon ajuste le path)
-        fetch('/VOIE_PUBLIQUE.json')
-          .then(response => response.json())
-          .then(data => {
-            // Parcourir toutes les lignes
-            data.features.forEach(feature => {
-              const coords = feature.geometry.coordinates.map(c => [c[1], c[0]]); // Leaflet veut [lat, lon]
-      
-              L.polyline(coords, {
-                color: '#3388ff',
-                weight: 3,
+<script>
+    // Charger JSON (verify que le json est dans le dossier /public sinon ajuste le path)
+    fetch('/VOIE_PUBLIQUE.json')
+      .then(response => response.json())
+      .then(data => {
+        console.log('Chargement des voies publiques...');
+  
+        function getColor(hierarchi) {
+          switch (hierarchi) {
+            case 'Autoroute': return 'purple';
+            case 'Artère principale': return 'cyan';
+            case 'Artère secondaire': return 'green';
+            case 'Collectrice principale': return 'red';
+            case 'Collectrice secondaire': return 'orange';
+            case 'Rue locale': return 'blue';
+            case 'Autre': return 'yellow';
+            default: return 'gray'; // Autres types
+          }
+        }
+  
+        L.geoJSON(data, {
+          style: function (feature) {
+            return {
+              color: getColor(feature.properties.HIERARCHI),
+              weight: 3,
+              opacity: 0.8
+            };
+          },
+          onEachFeature: function (feature, layer) {
+            if (feature.properties && feature.properties.NOM_RUE) {
+              layer.bindTooltip(feature.properties.NOM_RUE, {
+                permanent: false,
+                direction: 'top'
+              });
+            }
+
+            layer.on('click', function () {
+              console.log('Rue sélectionnée:', feature.properties.NOM_TOPO);
+              layer.setStyle({
+                color: 'lime',
+                weight: 5,
                 opacity: 1
-              }).addTo(map);
+              });
             });
-          })
-          .catch(error => {
-            console.error('Erreur chargement VOIE_PUBLIQUE.json:', error);
-          });
-      </script>
+          }
+        }).addTo(map);
+      })
+      .catch(error => {
+        console.error('Erreur lors du chargement des voies publiques:', error);
+      });
+  </script>
+  
+  
 </body>
 
 </html>
