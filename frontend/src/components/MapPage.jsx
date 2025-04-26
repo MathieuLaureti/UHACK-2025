@@ -31,33 +31,38 @@ const MapPage = () => {
         console.log('Fetched data:', data);
         const newLayers = {};
 
-        function getColor(hierarchie) {
-          switch (hierarchie) {
-            case 'Autoroute': return '#ffff36';
-            case 'Artère principale': return '#f781bf';
-            case 'Artère secondaire': return '#ff7f00';
-            case 'Collectrice principale': return '#4daf4a';
-            case 'Collectrice secondaire': return '#984ea3';
-            case 'Rue locale': return '#377eb8';
-            default: return '#000000';
-          }
-        }
+    Promise.all([
+      fetch('http://localhost:3000/api/TROTTOIR').then(res => res.json()),
+      fetch('http://localhost:3000/api/VOIE_PUBLIQUE').then(res => res.json())
+    ])
+    .then(([trottoirData, routeData]) => {
+      console.log('Fetched trottoirs and routes');
 
-        function fixCoordinates(coords) {
-          if (!Array.isArray(coords)) return [];
-          if (typeof coords[0] === 'number') {
-            const newCoords = [];
-            for (let i = 0; i < coords.length; i += 2) {
-              newCoords.push([coords[i], coords[i + 1]]);
-            }
-            return newCoords;
-          }
-          return coords.map(coord => {
-            if (Array.isArray(coord) && coord.length > 2) {
-              return [coord[0], coord[1]];
-            }
-            return coord;
+      const trottoirLayers = [];
+      const routeLayersByType = {};
+
+      // Ajouter les trottoirs
+      trottoirData.forEach(item => {
+        try {
+          if (!item.coordinates) return;
+          const coords = JSON.parse(item.coordinates);
+
+          if (!Array.isArray(coords) || coords.length < 2) return;
+          const allPointsValid = coords.every(pt => Array.isArray(pt) && pt.length === 2);
+          if (!allPointsValid) return;
+
+          const fixedCoords = coords.map(pt => [pt[1], pt[0]]);
+
+          const layer = L.polyline(fixedCoords, {
+            color: '#bbbbbb',
+            weight: 8,
+            opacity: 0.5
           });
+
+          trottoirLayers.push(layer);
+
+        } catch (e) {
+          console.error('Erreur parsing trottoir:', item, e);
         }
 
         let ignoredRoutes = 0;
@@ -139,23 +144,76 @@ const MapPage = () => {
         console.error('Erreur de chargement:', error);
       });
 
-    return () => {
-      if (map) {
-        map.remove();
+      // Groupe des trottoirs
+      const trottoirsGroup = L.layerGroup(trottoirLayers).addTo(map);
+      newLayers['Trottoirs'] = trottoirsGroup;
+
+      // Ajouter les routes
+      routeData.forEach(item => {
+        try {
+          if (!item.coordinates) return;
+          const coords = JSON.parse(item.coordinates);
+
+          if (!Array.isArray(coords) || coords.length < 2) return;
+          const allPointsValid = coords.every(pt => Array.isArray(pt) && pt.length === 2);
+          if (!allPointsValid) return;
+
+          const fixedCoords = coords.map(pt => [pt[1], pt[0]]);
+
+          function getColor(hierarchie) {
+            switch (hierarchie) {
+              case 'Autoroute': return '#ffff36';
+              case 'Artère principale': return '#f781bf';
+              case 'Artère secondaire': return '#ff7f00';
+              case 'Collectrice principale': return '#4daf4a';
+              case 'Collectrice secondaire': return '#984ea3';
+              case 'Rue locale': return '#377eb8';
+              default: return '#000000';
+            }
+          }
+
+          const type = item.HIERARCHI || 'Autre';
+
+          const layer = L.polyline(fixedCoords, {
+            color: getColor(item.HIERARCHI),
+            weight: 5,
+            opacity: 1
+          });
+
+          if (!routeLayersByType[type]) routeLayersByType[type] = [];
+          routeLayersByType[type].push(layer);
+
+        } catch (e) {
+          console.error('Erreur parsing route:', item, e);
+        }
+      });
+
+      // Créer un LayerGroup pour chaque type de route
+      for (const type in routeLayersByType) {
+        const group = L.layerGroup(routeLayersByType[type]).addTo(map);
+        newLayers[type] = group;
       }
+
+      setLayersByType(newLayers);
+    })
+    .catch(error => {
+      console.error('Erreur chargement des données:', error);
+    });
+
+    return () => {
+      if (map) map.remove();
     };
   }, []);
 
   const toggleTypeVisibility = (typeName) => {
-    if (!layersByType[typeName]) return;
+    const group = layersByType[typeName];
+    if (!group) return;
 
-    layersByType[typeName].forEach(layer => {
-      if (mapInstance && mapInstance.hasLayer(layer)) {
-        mapInstance.removeLayer(layer);
-      } else if (mapInstance) {
-        layer.addTo(mapInstance);
-      }
-    });
+    if (mapInstance && mapInstance.hasLayer(group)) {
+      mapInstance.removeLayer(group);
+    } else if (mapInstance) {
+      group.addTo(mapInstance);
+    }
   };
 
   return (
@@ -206,3 +264,4 @@ const MapPage = () => {
 };
 
 export default MapPage;
+
