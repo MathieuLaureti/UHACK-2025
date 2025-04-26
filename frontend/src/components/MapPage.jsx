@@ -23,11 +23,12 @@ const MapPage = () => {
   
     setMapInstance(map);
   
-    fetch('/VOIE_PUBLIQUE.json')
+    fetch('http://localhost:3000/api/VOIE_PUBLIQUE')
       .then(response => response.json())
       .then(data => {
         const newLayers = {};
-  
+        //console.log("fetched data", data);
+        console.log("fetched data", data);
         function getColor(hierarchie) {
           switch (hierarchie) {
             case 'Autoroute': return '#ffff36';

@@ -4,7 +4,7 @@ cd frontend; npm run dev
 ### Run backend 
 cd backend; npm run dev
 ### Build Docker
-docker-compose build -no-cache
+docker-compose up --build -no-cache
 ### starting Docker
 docker-compose up
 

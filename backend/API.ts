@@ -1,11 +1,14 @@
 import express, { Request, Response } from 'express';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
+import cors from 'cors';
 
 const app = express();
 const PORT = 3000;
 
+app.use(cors());
 app.use(express.json()); // Middleware to parse JSON
+
 // Open SQLite database
 const dbPromise = open({
     filename: 'data/data.db',
