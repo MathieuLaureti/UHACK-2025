@@ -157,20 +157,66 @@ const MapPage = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', height: '100vh', boxSizing: 'border-box' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      padding: '20px',
+      height: '100vh',
+      boxSizing: 'border-box'
+    }}>
       <h1 style={{ marginBottom: '20px' }}>Carte de déneigement</h1>
-      <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', width: '100%', justifyContent: 'center' }}>
-        <div style={{ width: '800px', height: '700px', border: '2px solid #ccc', borderRadius: '10px', overflow: 'hidden' }}>
-          <div id="map" style={{ width: '100%', height: '100%' }}></div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '700px', overflowY: 'auto' }}>
-          <Legend toggleTypeVisibility={toggleTypeVisibility} />
+  
+      <div style={{
+        display: 'flex',
+        flexDirection: 'row',
+        gap: '20px',
+        width: '100%',
+        justifyContent: 'center',
+        height: '100%'
+      }}>
+        
+        {/* 🔵 Barre de recherche à gauche */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+          maxHeight: '700px',
+          overflowY: 'auto'
+        }}>
           <StreetSearch streetsData={streetsData} map={mapInstance} favorites={favorites} setFavorites={setFavorites} />
+        </div>
+  
+        {/* 🟢 La carte au centre */}
+        <div style={{
+          width: '800px',
+          height: '700px',
+          border: '2px solid #ccc',
+          borderRadius: '10px',
+          overflow: 'hidden'
+        }}>
+          <div id="map" style={{
+            width: '100%',
+            height: '100%'
+          }}></div>
+        </div>
+  
+        {/* 🔴 Légende + Connexion à droite */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+          maxHeight: '700px',
+          overflowY: 'auto'
+        }}>
+          <Legend toggleTypeVisibility={(type) => toggleTypeVisibility(type, favorites)} />
           <Login />
         </div>
+  
       </div>
     </div>
   );
+  
 };
 
 export default MapPage;

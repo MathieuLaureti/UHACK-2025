@@ -19,12 +19,16 @@ const StreetSearch = ({ streetsData, map, favorites, setFavorites }) => {
 
   useEffect(() => {
     if (searchInput.length > 1) {
-      const filtered = streetsData.filter((street) =>
-        (street.NOM_TOPO || '')
-          .toLowerCase()
-          .includes(searchInput.toLowerCase())
-      );
-      setFilteredStreets(filtered);
+      const uniqueNames = new Map();
+  
+      streetsData.forEach((street) => {
+        const name = (street.NOM_TOPO || '').toLowerCase();
+        if (name.includes(searchInput.toLowerCase()) && !uniqueNames.has(name)) {
+          uniqueNames.set(name, street);
+        }
+      });
+  
+      setFilteredStreets(Array.from(uniqueNames.values()));
     } else {
       setFilteredStreets([]);
     }
@@ -137,8 +141,15 @@ const StreetSearch = ({ streetsData, map, favorites, setFavorites }) => {
         value={searchInput}
         onChange={(e) => setSearchInput(e.target.value)}
         onKeyDown={handleKeyDown}
-        style={{ width: '100%', padding: '8px', borderRadius: '4px', backgroundColor: '#333', color: 'white', border: '1px solid #555' }}
-      />
+      style={{
+        width: '100%',
+        padding: '10px',
+        borderRadius: '6px',
+        backgroundColor: '#333',
+        color: 'white',
+        border: '1px solid #555',
+        boxSizing: 'border-box'
+  }}/>
       {filteredStreets.length > 0 && (
         <ul style={{
           listStyleType: 'none',
