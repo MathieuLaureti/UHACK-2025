@@ -3,10 +3,8 @@
 cd frontend; npm run dev
 ### Run backend 
 cd backend; npm run dev
-### Build Docker
-docker-compose up --build -no-cache
-### starting Docker
-docker-compose up
+### Build and run Docker
+docker-compose up --build
 
 ## API definition
 l'API est trouvable à l'adresse : localhost:3000/api/
