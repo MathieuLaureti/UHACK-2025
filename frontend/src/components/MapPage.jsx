@@ -10,7 +10,7 @@ const MapPage = () => {
   const [mapInstance, setMapInstance] = useState(null);
   const [streetsData, setStreetsData] = useState([]);
   const [favorites, setFavorites] = useState([]);
-  const [favorisFilterActive, setFavorisFilterActive] = useState(true); // 👈 Nouveau pour suivre l'état du filtre
+  const [favorisFilterActive, setFavorisFilterActive] = useState(true);
 
   useEffect(() => {
     let map;
@@ -49,66 +49,46 @@ const MapPage = () => {
       const routeLayersByType = {};
 
       trottoirData.forEach(item => {
-        try {
-          if (!item.coordinates) return;
-          const coords = JSON.parse(item.coordinates);
-          if (!Array.isArray(coords) || coords.length < 2) return;
+        if (!item.coordinates) return;
+        const coords = JSON.parse(item.coordinates);
+        if (!Array.isArray(coords) || coords.length < 2) return;
 
-          const fixedCoords = coords.map(pt => [pt[1], pt[0]]);
+        const fixedCoords = coords.map(pt => [pt[1], pt[0]]);
 
-          const layer = L.polyline(fixedCoords, {
-            color: '#bbbbbb',
-            weight: 8,
-            opacity: 0.5
-          });
+        const layer = L.polyline(fixedCoords, {
+          color: '#bbbbbb',
+          weight: 8,
+          opacity: 0.5
+        });
 
-          layer.bindTooltip(item.NOM_TOPO || 'Trottoir', {
-            permanent: false,
-            direction: 'top'
-          });
-
-          trottoirLayers.push(layer);
-
-        } catch (e) {
-          console.error('Erreur parsing trottoir:', item, e);
-        }
+        trottoirLayers.push(layer);
       });
 
       const trottoirsGroup = L.layerGroup(trottoirLayers).addTo(map);
       newLayers['Trottoirs'] = trottoirsGroup;
 
       routeData.forEach(item => {
-        try {
-          if (!item.coordinates) return;
-          const coords = JSON.parse(item.coordinates);
-          if (!Array.isArray(coords) || coords.length < 2) return;
+        if (!item.coordinates) return;
+        const coords = JSON.parse(item.coordinates);
+        if (!Array.isArray(coords) || coords.length < 2) return;
 
-          const fixedCoords = coords.map(pt => [pt[1], pt[0]]);
-          const type = item.HIERARCHI || 'Autre';
+        const fixedCoords = coords.map(pt => [pt[1], pt[0]]);
+        const type = item.HIERARCHI || 'Autre';
 
-          const layer = L.polyline(fixedCoords, {
-            color: getColor(item.HIERARCHI),
-            weight: 5,
-            opacity: 1
-          });
+        const layer = L.polyline(fixedCoords, {
+          color: getColor(item.HIERARCHI),
+          weight: 5,
+          opacity: 1
+        });
 
-          // Stocke infos dans options
-          layer.options.nomTopo = item.NOM_TOPO;
-          layer.options.hierarchie = item.HIERARCHI;
-          layer.options.originalColor = getColor(item.HIERARCHI);
+        layer.options.nomTopo = item.NOM_TOPO;
+        layer.options.hierarchie = item.HIERARCHI;
+        layer.options.originalColor = getColor(item.HIERARCHI);
 
-          layer.bindTooltip(item.NOM_TOPO || 'Route', {
-            permanent: false,
-            direction: 'top'
-          });
+        if (!routeLayersByType[type]) routeLayersByType[type] = [];
+        routeLayersByType[type].push(layer);
 
-          if (!routeLayersByType[type]) routeLayersByType[type] = [];
-          routeLayersByType[type].push(layer);
-
-          item.fixedCoords = fixedCoords;
-        } catch (e) {
-          console.error('Erreur parsing route:', item, e);
-        }
+        item.fixedCoords = fixedCoords;
       });
 
       for (const type in routeLayersByType) {
@@ -128,94 +108,63 @@ const MapPage = () => {
     };
   }, []);
 
-  const toggleTypeVisibility = (typeName, updatedFavorites = favorites) => {
-    if (typeName === 'Favoris') {
-      const nextState = !favorisFilterActive;
-  
-      Object.values(mapInstance._layers).forEach(layer => {
-        if (layer.options && layer.options.nomTopo) {
-          const isFavorite = updatedFavorites.includes(layer.options.nomTopo);
-  
-          if (isFavorite) {
-            if (nextState) {
-              // 🛠️ ACTIVER l'affichage favori : rouge pointillé
-              layer.setStyle({
-                color: '#FF0000',
-                weight: 5,
-                opacity: 1,
-                dashArray: '5,5'
-              });
-              if (layer._path) {
-                layer._path.setAttribute('stroke-dasharray', '5,5');
-              }
-            } else {
-              // 🛠️ DÉSACTIVER l'affichage favori : remettre la couleur originale
-              layer.setStyle({
-                color: layer.options.originalColor || '#000000',
-                weight: 5,
-                opacity: 1,
-                dashArray: null
-              });
-              if (layer._path) {
-                layer._path.removeAttribute('stroke-dasharray');
-              }
-            }
+  // 🔥 useEffect qui surveille FAVORITES et actualise la carte automatiquement
+  useEffect(() => {
+    if (!mapInstance) return;
+
+    Object.values(mapInstance._layers).forEach(layer => {
+      if (layer.options && layer.options.nomTopo) {
+        const isFavorite = favorites.includes(layer.options.nomTopo);
+
+        if (isFavorite && favorisFilterActive) {
+          layer.setStyle({
+            color: '#FF0000',
+            weight: 5,
+            opacity: 1,
+            dashArray: '5,5'
+          });
+          if (layer._path) {
+            layer._path.setAttribute('stroke-dasharray', '5,5');
+          }
+        } else {
+          layer.setStyle({
+            color: layer.options.originalColor || '#000000',
+            weight: 5,
+            opacity: 1,
+            dashArray: null
+          });
+          if (layer._path) {
+            layer._path.removeAttribute('stroke-dasharray');
           }
         }
-      });
-  
-      setFavorisFilterActive(nextState); // ➔ seulement après avoir fini les changements visuels
+      }
+    });
+  }, [favorites, favorisFilterActive, mapInstance]);
+
+  const toggleTypeVisibility = (typeName) => {
+    if (typeName === 'Favoris') {
+      setFavorisFilterActive(prev => !prev);
     } else {
       const group = layersByType[typeName];
       if (!group) return;
-  
-      if (mapInstance && mapInstance.hasLayer(group)) {
+
+      if (mapInstance.hasLayer(group)) {
         mapInstance.removeLayer(group);
-      } else if (mapInstance) {
+      } else {
         group.addTo(mapInstance);
       }
     }
   };
-  
+
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: '20px',
-      height: '100vh',
-      boxSizing: 'border-box'
-    }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', height: '100vh', boxSizing: 'border-box' }}>
       <h1 style={{ marginBottom: '20px' }}>Carte de déneigement</h1>
-
-      <div style={{
-        display: 'flex',
-        flexDirection: 'row',
-        gap: '20px',
-        width: '100%',
-        justifyContent: 'center'
-      }}>
-        <div style={{
-          width: '800px',
-          height: '700px',
-          border: '2px solid #ccc',
-          borderRadius: '10px',
-          overflow: 'hidden'
-        }}>
-          <div id="map" style={{
-            width: '100%',
-            height: '100%'
-          }}></div>
+      <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', width: '100%', justifyContent: 'center' }}>
+        <div style={{ width: '800px', height: '700px', border: '2px solid #ccc', borderRadius: '10px', overflow: 'hidden' }}>
+          <div id="map" style={{ width: '100%', height: '100%' }}></div>
         </div>
-
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '20px',
-          maxHeight: '700px',
-          overflowY: 'auto'
-        }}>
-          <Legend toggleTypeVisibility={(type) => toggleTypeVisibility(type, favorites)} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '700px', overflowY: 'auto' }}>
+          <Legend toggleTypeVisibility={toggleTypeVisibility} />
           <StreetSearch streetsData={streetsData} map={mapInstance} favorites={favorites} setFavorites={setFavorites} />
           <Login />
         </div>

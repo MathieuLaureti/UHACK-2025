@@ -47,36 +47,45 @@ const StreetSearch = ({ streetsData, map, favorites, setFavorites }) => {
       if (streetName && !favorites.includes(streetName)) {
         const updatedFavorites = [...favorites, streetName];
         setFavorites(updatedFavorites);
-
-        // 🔥 Mettre à jour visuellement sur la carte
-        Object.values(map._layers).forEach(layer => {
-          if (layer.options && layer.options.nomTopo === streetName) {
-            layer.options.isFavorite = true; // Important: flag favori
-            layer.setStyle({
-              color: '#FF0000',
-              weight: 5,
-              opacity: 1,
-              dashArray: '5,5'
-            });
-            if (layer._path) {
-              layer._path.setAttribute('stroke-dasharray', '5,5');
-            }
-          }
-        });
+  
+        refreshFavoritesOnMap(updatedFavorites); // 🔥 avec la bonne liste
       }
     }
   };
+  
+  
 
   const handleRemoveFavorite = (streetName) => {
     const confirmRemove = window.confirm(`Êtes-vous sûr de vouloir retirer "${streetName}" des favoris ?`);
     if (confirmRemove) {
       const updatedFavorites = favorites.filter(name => name !== streetName);
       setFavorites(updatedFavorites);
-
-      // 🔥 Enlever visuellement de la carte
-      Object.values(map._layers).forEach(layer => {
-        if (layer.options && layer.options.nomTopo === streetName) {
-          delete layer.options.isFavorite; // Important: enlever le flag
+      
+      refreshFavoritesOnMap(updatedFavorites); // 🔥 avec la bonne liste
+    }
+  };
+  
+  
+  const refreshFavoritesOnMap = (map, favorites) => {
+    if (!map || !map._layers) return;
+  
+    Object.values(map._layers).forEach(layer => {
+      if (layer.options && layer.options.nomTopo) {
+        const isFavori = favorites.includes(layer.options.nomTopo);
+  
+        if (isFavori) {
+          // 🔥 Si dans favoris ➔ mettre en rouge pointillé
+          layer.setStyle({
+            color: '#FF0000',
+            weight: 5,
+            opacity: 1,
+            dashArray: '5,5'
+          });
+          if (layer._path) {
+            layer._path.setAttribute('stroke-dasharray', '5,5');
+          }
+        } else {
+          // 🔥 Sinon ➔ remettre à sa couleur d'origine
           layer.setStyle({
             color: layer.options.originalColor || '#000000',
             weight: 5,
@@ -87,9 +96,11 @@ const StreetSearch = ({ streetsData, map, favorites, setFavorites }) => {
             layer._path.removeAttribute('stroke-dasharray');
           }
         }
-      });
-    }
+      }
+    });
   };
+  
+  
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && filteredStreets.length > 0) {
