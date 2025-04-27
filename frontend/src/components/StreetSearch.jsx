@@ -1,110 +1,135 @@
 import React, { useState, useEffect } from 'react';
+import L from 'leaflet';
 
 const StreetSearch = ({ streetsData, map, favorites, setFavorites }) => {
   const [searchInput, setSearchInput] = useState('');
   const [filteredStreets, setFilteredStreets] = useState([]);
   const [selectedStreet, setSelectedStreet] = useState(null);
   const [showFavorites, setShowFavorites] = useState(true);
+  const [favoriteCircles, setFavoriteCircles] = useState([]);
+  const [addressesData, setAddressesData] = useState([]);
 
+  // Charger la table des adresses au démarrage
   useEffect(() => {
-    const savedFavorites = localStorage.getItem('favorites');
-    if (savedFavorites) {
-      setFavorites(JSON.parse(savedFavorites));
-    }
+    fetch('http://localhost:3000/api/ADRESSE')
+      .then(res => res.json())
+      .then(data => setAddressesData(data))
+      .catch(err => console.error('Erreur chargement adresse', err));
+  }, []);
+
+  // Charger favoris depuis localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('favorites');
+    if (saved) setFavorites(JSON.parse(saved));
   }, [setFavorites]);
 
+  // Sauvegarder favoris dans localStorage
   useEffect(() => {
     localStorage.setItem('favorites', JSON.stringify(favorites));
   }, [favorites]);
 
+  // Mettre à jour les cercles sur la carte
+  useEffect(() => {
+    if (!map) return;
+
+    favoriteCircles.forEach(circle => map.removeLayer(circle));
+
+    const newCircles = [];
+
+    favorites.forEach(fav => {
+      if (fav.coords) {
+        const circle = L.circle(fav.coords, {
+          radius: 750,
+          color: '#00BFFF',
+          fillOpacity: 0.2,
+          weight: 2
+        }).addTo(map);
+
+        newCircles.push(circle);
+      }
+    });
+
+    setFavoriteCircles(newCircles);
+  }, [favorites, map]);
+
+  // Filtrer recherche (rues + adresses)
   useEffect(() => {
     if (searchInput.length > 1) {
-      const uniqueNames = new Map();
+      const lowerSearch = searchInput.toLowerCase();
+      const results = [];
   
-      streetsData.forEach((street) => {
-        const name = (street.NOM_TOPO || '').toLowerCase();
-        if (name.includes(searchInput.toLowerCase()) && !uniqueNames.has(name)) {
-          uniqueNames.set(name, street);
+      streetsData.forEach(street => {
+        const streetName = (street.NOM_TOPO || '').toLowerCase();
+        if (streetName.includes(lowerSearch)) {
+          results.push({
+            ...street,
+            ADR_COMPLE: null // Ce sont des rues normales
+          });
         }
       });
   
-      setFilteredStreets(Array.from(uniqueNames.values()));
+      addressesData.forEach(address => {
+        const fullAddress = (address.ADR_COMPLE || '').toLowerCase();
+        if (fullAddress.includes(lowerSearch)) {
+          // On cherche la vraie rue correspondante dans streetsData
+          const matchedStreet = streetsData.find(street => 
+            fullAddress.includes((street.NOM_TOPO || '').toLowerCase())
+          );
+  
+          if (matchedStreet && matchedStreet.fixedCoords?.length > 0) {
+            results.push({
+              ...matchedStreet,
+              ADR_COMPLE: address.ADR_COMPLE // 🚀 important: on garde l'adresse complète
+            });
+          }
+        }
+      });
+  
+      setFilteredStreets(results);
     } else {
       setFilteredStreets([]);
     }
-  }, [searchInput, streetsData]);
+  }, [searchInput, streetsData, addressesData]);
+  
 
-  const handleSelectStreet = (street) => {
-    if (street && street.fixedCoords && street.fixedCoords.length > 0) {
-      const [lat, lng] = street.fixedCoords[0];
+  const handleSelectStreet = (item) => {
+    if (!item) return;
+  
+    if (item.fixedCoords?.length > 0) {
+      const [lat, lng] = item.fixedCoords[0];
       map.setView([lat, lng], 18);
-      setSelectedStreet(street);
+      setSelectedStreet(item);
+    } else {
+      alert('Impossible de localiser cet élément.');
     }
-
+  
     setSearchInput('');
     setFilteredStreets([]);
   };
-
+  
   const handleAddFavorite = () => {
     if (selectedStreet) {
-      const streetName = selectedStreet.NOM_TOPO;
-      if (streetName && !favorites.includes(streetName)) {
-        const updatedFavorites = [...favorites, streetName];
-        setFavorites(updatedFavorites);
+      const name = selectedStreet.NOM_TOPO;
+      const adresse = selectedStreet.ADR_COMPLE || selectedStreet.NOM_TOPO;
+      const coords = selectedStreet.fixedCoords?.length > 0 ? selectedStreet.fixedCoords[0] : null;
   
-        refreshFavoritesOnMap(updatedFavorites); // 🔥 avec la bonne liste
+      if (!favorites.some(fav => fav.adresse === adresse)) {
+        if (!coords) {
+          alert('Impossible d’ajouter cette adresse : pas de coordonnées disponibles.');
+          return;
+        }
+        setFavorites(prev => [...prev, { name, adresse, coords }]);
       }
     }
   };
-  
   
 
-  const handleRemoveFavorite = (streetName) => {
-    const confirmRemove = window.confirm(`Êtes-vous sûr de vouloir retirer "${streetName}" des favoris ?`);
+  const handleRemoveFavorite = (favToRemove) => {
+    const confirmRemove = window.confirm(`Retirer "${favToRemove.adresse}" des favoris ?`);
     if (confirmRemove) {
-      const updatedFavorites = favorites.filter(name => name !== streetName);
-      setFavorites(updatedFavorites);
-      
-      refreshFavoritesOnMap(updatedFavorites); // 🔥 avec la bonne liste
+      setFavorites(prev => prev.filter(fav => fav.adresse !== favToRemove.adresse));
     }
   };
-  
-  
-  const refreshFavoritesOnMap = (map, favorites) => {
-    if (!map || !map._layers) return;
-  
-    Object.values(map._layers).forEach(layer => {
-      if (layer.options && layer.options.nomTopo) {
-        const isFavori = favorites.includes(layer.options.nomTopo);
-  
-        if (isFavori) {
-          // 🔥 Si dans favoris ➔ mettre en rouge pointillé
-          layer.setStyle({
-            color: '#FF0000',
-            weight: 5,
-            opacity: 1,
-            dashArray: '5,5'
-          });
-          if (layer._path) {
-            layer._path.setAttribute('stroke-dasharray', '5,5');
-          }
-        } else {
-          // 🔥 Sinon ➔ remettre à sa couleur d'origine
-          layer.setStyle({
-            color: layer.options.originalColor || '#000000',
-            weight: 5,
-            opacity: 1,
-            dashArray: null
-          });
-          if (layer._path) {
-            layer._path.removeAttribute('stroke-dasharray');
-          }
-        }
-      }
-    });
-  };
-  
-  
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && filteredStreets.length > 0) {
@@ -112,15 +137,11 @@ const StreetSearch = ({ streetsData, map, favorites, setFavorites }) => {
     }
   };
 
-  const handleFavoriteClick = (favoriteName) => {
-    const foundStreet = streetsData.find(
-      street => (street.NOM_TOPO || '').toLowerCase() === favoriteName.toLowerCase()
-    );
-
-    if (foundStreet) {
-      handleSelectStreet(foundStreet);
+  const handleFavoriteClick = (fav) => {
+    if (fav.coords) {
+      map.setView(fav.coords, 18);
     } else {
-      alert('Rue introuvable!');
+      alert('Coordonnées manquantes pour cette adresse.');
     }
   };
 
@@ -137,19 +158,21 @@ const StreetSearch = ({ streetsData, map, favorites, setFavorites }) => {
     }}>
       <input
         type="text"
-        placeholder="Rechercher une rue..."
+        placeholder="Rechercher une rue ou une adresse..."
         value={searchInput}
         onChange={(e) => setSearchInput(e.target.value)}
         onKeyDown={handleKeyDown}
-      style={{
-        width: '100%',
-        padding: '10px',
-        borderRadius: '6px',
-        backgroundColor: '#333',
-        color: 'white',
-        border: '1px solid #555',
-        boxSizing: 'border-box'
-  }}/>
+        style={{
+          width: '100%',
+          padding: '10px',
+          borderRadius: '6px',
+          backgroundColor: '#333',
+          color: 'white',
+          border: '1px solid #555',
+          boxSizing: 'border-box'
+        }}
+      />
+
       {filteredStreets.length > 0 && (
         <ul style={{
           listStyleType: 'none',
@@ -158,19 +181,18 @@ const StreetSearch = ({ streetsData, map, favorites, setFavorites }) => {
           maxHeight: '150px',
           overflowY: 'auto'
         }}>
-          {filteredStreets.map((street, index) => (
-            <li
-              key={index}
-              onClick={() => handleSelectStreet(street)}
-              style={{
-                padding: '8px',
-                cursor: 'pointer',
-                borderBottom: '1px solid #555'
-              }}
-            >
-              {street.NOM_TOPO}
-            </li>
-          ))}
+      {filteredStreets.map((street, idx) => (
+        <li
+          key={idx}
+          onClick={() => handleSelectStreet(street)}
+        style={{
+          padding: '8px',
+          cursor: 'pointer',
+          borderBottom: '1px solid #555'
+      }}>
+    {street.ADR_COMPLE || street.NOM_TOPO}
+  </li>
+))}
         </ul>
       )}
 
@@ -178,7 +200,15 @@ const StreetSearch = ({ streetsData, map, favorites, setFavorites }) => {
         <div style={{ marginTop: '10px' }}>
           <button
             onClick={handleAddFavorite}
-            style={{ padding: '8px', width: '100%', borderRadius: '4px', backgroundColor: '#4caf50', color: 'white', border: 'none', cursor: 'pointer' }}
+            style={{
+              padding: '8px',
+              width: '100%',
+              borderRadius: '4px',
+              backgroundColor: '#4caf50',
+              color: 'white',
+              border: 'none',
+              cursor: 'pointer'
+            }}
           >
             ⭐ Ajouter aux favoris
           </button>
@@ -198,17 +228,25 @@ const StreetSearch = ({ streetsData, map, favorites, setFavorites }) => {
               maxHeight: '150px',
               overflowY: 'auto'
             }}>
-              {favorites.map((name, idx) => (
+              {favorites.map((fav, idx) => (
                 <li key={idx} style={{ marginBottom: '5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span
-                    onClick={() => handleFavoriteClick(name)}
+                    onClick={() => handleFavoriteClick(fav)}
                     style={{ cursor: 'pointer', textDecoration: 'underline' }}
                   >
-                    {name}
+                    {fav.adresse}
                   </span>
                   <button
-                    onClick={() => handleRemoveFavorite(name)}
-                    style={{ marginLeft: '8px', background: 'red', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '2px 6px' }}
+                    onClick={() => handleRemoveFavorite(fav)}
+                    style={{
+                      marginLeft: '8px',
+                      background: 'red',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      padding: '2px 6px'
+                    }}
                   >
                     X
                   </button>
