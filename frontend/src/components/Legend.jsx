@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const hierarchies = [
   { name: 'Autoroute', color: '#ffff36' },
@@ -7,10 +7,31 @@ const hierarchies = [
   { name: 'Collectrice principale', color: '#4daf4a' },
   { name: 'Collectrice secondaire', color: '#984ea3' },
   { name: 'Rue locale', color: '#377eb8' },
+  { name: 'Trottoirs', color: '#bbbbbb' },
+  { name: 'Favoris', color: '#FF0000', isDashed: true },
   { name: 'Autre', color: '#000000' }
 ];
 
 const Legend = ({ toggleTypeVisibility }) => {
+  const [disabledFilters, setDisabledFilters] = useState([]);
+
+  const handleClick = (name) => {
+    const isCurrentlyDisabled = disabledFilters.includes(name);
+
+    // 🔥 Toujours appeler toggleTypeVisibility pour mettre à jour la carte
+    toggleTypeVisibility(name);
+
+    setDisabledFilters(prev => {
+      if (isCurrentlyDisabled) {
+        // Si le filtre était désactivé, on le réactive => on le retire des désactivés
+        return prev.filter(f => f !== name);
+      } else {
+        // Sinon on le désactive => on l'ajoute dans disabled
+        return [...prev, name];
+      }
+    });
+  };
+
   return (
     <div style={{
       width: '200px',
@@ -24,7 +45,7 @@ const Legend = ({ toggleTypeVisibility }) => {
       {hierarchies.map((item, index) => (
         <button
           key={index}
-          onClick={() => toggleTypeVisibility(item.name)}
+          onClick={() => handleClick(item.name)}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -41,9 +62,16 @@ const Legend = ({ toggleTypeVisibility }) => {
             width: '18px',
             height: '18px',
             marginRight: '8px',
-            borderRadius: '3px'
+            borderRadius: '3px',
+            border: item.isDashed ? '2px dashed red' : 'none'
           }}></div>
-          <span>{item.name}</span>
+
+          <span style={{
+            textDecoration: disabledFilters.includes(item.name) ? 'line-through' : 'none',
+            color: disabledFilters.includes(item.name) ? '#888' : 'white'
+          }}>
+            {item.name}
+          </span>
         </button>
       ))}
     </div>

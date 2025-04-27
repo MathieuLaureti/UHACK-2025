@@ -24,6 +24,10 @@ Retourne une ligne specifique d'une table choisi (la recherche est faite selon l
 ### localhost:3000/api/{table}/{id}/{attribut}
 Retourne un Attribut spécifique d'une ligne choisi sur la table de notre choix.
 
+### localhost:3000/api/timing_t/{trottoir id}
+
+### localhost:3000/api/timing_r/{nom de rue}
+
 ## Étape 0 : Problématique 
  - "Manque d’information entre les citoyens et la ville dans le processus de déneigement" (2)
 #### Info supplémentaires 
