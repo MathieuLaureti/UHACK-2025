@@ -76,6 +76,7 @@ const MapPage = () => {
             const currentColor = layer.options.color;
           
             if (currentColor === '#FF0000') {
+
               layer.setStyle({ color: '#bbbbbb' });
             } else {
               layer.setStyle({ color: '#FF0000' });
@@ -97,39 +98,51 @@ const MapPage = () => {
         try {
           if (!item.coordinates) return;
           const coords = JSON.parse(item.coordinates);
-
+      
           if (!Array.isArray(coords) || coords.length < 2) return;
           const allPointsValid = coords.every(pt => Array.isArray(pt) && pt.length === 2);
           if (!allPointsValid) return;
-
+      
           const fixedCoords = coords.map(pt => [pt[1], pt[0]]);
-
+      
           const type = item.HIERARCHI || 'Autre';
-
+      
           const layer = L.polyline(fixedCoords, {
             color: getColor(item.HIERARCHI),
             weight: 5,
             opacity: 1
           });
+      
           layer.bindTooltip(item.NOM_TOPO || 'Route', {
             permanent: false,
             direction: 'top'
           });
-
+      
+          // 🔥 Attacher directement le NOM_TOPO au layer pour faciliter la comparaison
+          layer.options.nomTopo = item.NOM_TOPO;
+      
+          // 🔥 Click: sélectionne toutes les parties avec le même NOM_TOPO
           layer.on('click', () => {
-            const currentColor = layer.options.color;
-          
-            if (currentColor === '#FF0000') {
-              const hierarchie = item.HIERARCHI || 'Autre';
-              layer.setStyle({ color: getColor(hierarchie) });
-            } else {
-              layer.setStyle({ color: '#FF0000' });
-            }
+            const streetName = layer.options.nomTopo;
+            const isSelected = layer.options.color === '#FF0000';
+      
+            Object.values(routeLayersByType).forEach(layersArray => {
+              layersArray.forEach(l => {
+                if (l.options.nomTopo === streetName) {
+                  if (isSelected) {
+                    const hierarchie = item.HIERARCHI || 'Autre';
+                    l.setStyle({ color: getColor(hierarchie) });
+                  } else {
+                    l.setStyle({ color: '#FF0000' });
+                  }
+                }
+              });
+            });
           });
-          
+      
           if (!routeLayersByType[type]) routeLayersByType[type] = [];
           routeLayersByType[type].push(layer);
-
+      
           // Ajout info pour search
           item.fixedCoords = fixedCoords;
         } catch (e) {
