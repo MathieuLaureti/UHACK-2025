@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 
-const StreetSearch = ({ streetsData, map }) => {
+const StreetSearch = ({ streetsData, map, favorites, setFavorites }) => {
   const [searchInput, setSearchInput] = useState('');
   const [filteredStreets, setFilteredStreets] = useState([]);
-  const [favorites, setFavorites] = useState([]);
   const [selectedStreet, setSelectedStreet] = useState(null);
-  const [showFavorites, setShowFavorites] = useState(true); // NEW for collapsible list
+  const [showFavorites, setShowFavorites] = useState(true);
 
   useEffect(() => {
     const savedFavorites = localStorage.getItem('favorites');
     if (savedFavorites) {
       setFavorites(JSON.parse(savedFavorites));
     }
-  }, []);
+  }, [setFavorites]);
 
   useEffect(() => {
     localStorage.setItem('favorites', JSON.stringify(favorites));
@@ -21,7 +20,7 @@ const StreetSearch = ({ streetsData, map }) => {
   useEffect(() => {
     if (searchInput.length > 1) {
       const filtered = streetsData.filter((street) =>
-        (street.properties?.NOM_TOPO || '')
+        (street.NOM_TOPO || '')
           .toLowerCase()
           .includes(searchInput.toLowerCase())
       );
@@ -32,21 +31,9 @@ const StreetSearch = ({ streetsData, map }) => {
   }, [searchInput, streetsData]);
 
   const handleSelectStreet = (street) => {
-    if (street && street.geometry) {
-      let latLng;
-
-      if (street.geometry.type === "LineString") {
-        const [lng, lat] = street.geometry.coordinates[0];
-        latLng = [lat, lng];
-      } else if (street.geometry.type === "MultiLineString") {
-        const [lng, lat] = street.geometry.coordinates[0][0];
-        latLng = [lat, lng];
-      } else {
-        console.error('Type de géométrie inconnu:', street.geometry.type);
-        return;
-      }
-
-      map.setView(latLng, 18);
+    if (street && street.fixedCoords && street.fixedCoords.length > 0) {
+      const [lat, lng] = street.fixedCoords[0];
+      map.setView([lat, lng], 18);
       setSelectedStreet(street);
     }
 
@@ -56,9 +43,26 @@ const StreetSearch = ({ streetsData, map }) => {
 
   const handleAddFavorite = () => {
     if (selectedStreet) {
-      const streetName = selectedStreet.properties?.NOM_TOPO;
+      const streetName = selectedStreet.NOM_TOPO;
       if (streetName && !favorites.includes(streetName)) {
-        setFavorites([...favorites, streetName]);
+        const updatedFavorites = [...favorites, streetName];
+        setFavorites(updatedFavorites);
+
+        // 🔥 Mettre à jour visuellement sur la carte
+        Object.values(map._layers).forEach(layer => {
+          if (layer.options && layer.options.nomTopo === streetName) {
+            layer.options.isFavorite = true; // Important: flag favori
+            layer.setStyle({
+              color: '#FF0000',
+              weight: 5,
+              opacity: 1,
+              dashArray: '5,5'
+            });
+            if (layer._path) {
+              layer._path.setAttribute('stroke-dasharray', '5,5');
+            }
+          }
+        });
       }
     }
   };
@@ -66,7 +70,24 @@ const StreetSearch = ({ streetsData, map }) => {
   const handleRemoveFavorite = (streetName) => {
     const confirmRemove = window.confirm(`Êtes-vous sûr de vouloir retirer "${streetName}" des favoris ?`);
     if (confirmRemove) {
-      setFavorites(favorites.filter(name => name !== streetName));
+      const updatedFavorites = favorites.filter(name => name !== streetName);
+      setFavorites(updatedFavorites);
+
+      // 🔥 Enlever visuellement de la carte
+      Object.values(map._layers).forEach(layer => {
+        if (layer.options && layer.options.nomTopo === streetName) {
+          delete layer.options.isFavorite; // Important: enlever le flag
+          layer.setStyle({
+            color: layer.options.originalColor || '#000000',
+            weight: 5,
+            opacity: 1,
+            dashArray: null
+          });
+          if (layer._path) {
+            layer._path.removeAttribute('stroke-dasharray');
+          }
+        }
+      });
     }
   };
 
@@ -78,7 +99,7 @@ const StreetSearch = ({ streetsData, map }) => {
 
   const handleFavoriteClick = (favoriteName) => {
     const foundStreet = streetsData.find(
-      street => (street.properties?.NOM_TOPO || '').toLowerCase() === favoriteName.toLowerCase()
+      street => (street.NOM_TOPO || '').toLowerCase() === favoriteName.toLowerCase()
     );
 
     if (foundStreet) {
@@ -96,7 +117,7 @@ const StreetSearch = ({ streetsData, map }) => {
       boxShadow: '0px 0px 10px rgba(0,0,0,0.3)',
       fontSize: '14px',
       height: 'fit-content',
-      backgroundColor: '#1e1e1e', // same color as your theme
+      backgroundColor: '#1e1e1e',
       color: 'white'
     }}>
       <input
@@ -125,7 +146,7 @@ const StreetSearch = ({ streetsData, map }) => {
                 borderBottom: '1px solid #555'
               }}
             >
-              {street.properties?.NOM_TOPO}
+              {street.NOM_TOPO}
             </li>
           ))}
         </ul>

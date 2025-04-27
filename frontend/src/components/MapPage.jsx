@@ -9,6 +9,8 @@ const MapPage = () => {
   const [layersByType, setLayersByType] = useState({});
   const [mapInstance, setMapInstance] = useState(null);
   const [streetsData, setStreetsData] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+  const [favorisFilterActive, setFavorisFilterActive] = useState(true); // 👈 Nouveau pour suivre l'état du filtre
 
   useEffect(() => {
     let map;
@@ -25,7 +27,6 @@ const MapPage = () => {
 
     setMapInstance(map);
 
-    // 🎯 Bonne place pour la fonction
     function getColor(hierarchie) {
       switch (hierarchie) {
         case 'Autoroute': return '#ffff36';
@@ -38,26 +39,20 @@ const MapPage = () => {
       }
     }
 
-    // 🎯 Bonne place pour Promise.all
     Promise.all([
       fetch('http://localhost:3000/api/TROTTOIR').then(res => res.json()),
       fetch('http://localhost:3000/api/VOIE_PUBLIQUE').then(res => res.json())
     ])
     .then(([trottoirData, routeData]) => {
-      console.log('Fetched trottoirs and routes');
       const newLayers = {};
       const trottoirLayers = [];
       const routeLayersByType = {};
 
-      // Ajout trottoirs
       trottoirData.forEach(item => {
         try {
           if (!item.coordinates) return;
           const coords = JSON.parse(item.coordinates);
-
           if (!Array.isArray(coords) || coords.length < 2) return;
-          const allPointsValid = coords.every(pt => Array.isArray(pt) && pt.length === 2);
-          if (!allPointsValid) return;
 
           const fixedCoords = coords.map(pt => [pt[1], pt[0]]);
 
@@ -66,21 +61,10 @@ const MapPage = () => {
             weight: 8,
             opacity: 0.5
           });
-          
+
           layer.bindTooltip(item.NOM_TOPO || 'Trottoir', {
             permanent: false,
             direction: 'top'
-          });
-
-          layer.on('click', () => {
-            const currentColor = layer.options.color;
-          
-            if (currentColor === '#FF0000') {
-
-              layer.setStyle({ color: '#bbbbbb' });
-            } else {
-              layer.setStyle({ color: '#FF0000' });
-            }
           });
 
           trottoirLayers.push(layer);
@@ -93,57 +77,34 @@ const MapPage = () => {
       const trottoirsGroup = L.layerGroup(trottoirLayers).addTo(map);
       newLayers['Trottoirs'] = trottoirsGroup;
 
-      // Ajout routes
       routeData.forEach(item => {
         try {
           if (!item.coordinates) return;
           const coords = JSON.parse(item.coordinates);
-      
           if (!Array.isArray(coords) || coords.length < 2) return;
-          const allPointsValid = coords.every(pt => Array.isArray(pt) && pt.length === 2);
-          if (!allPointsValid) return;
-      
+
           const fixedCoords = coords.map(pt => [pt[1], pt[0]]);
-      
           const type = item.HIERARCHI || 'Autre';
-      
+
           const layer = L.polyline(fixedCoords, {
             color: getColor(item.HIERARCHI),
             weight: 5,
             opacity: 1
           });
-      
+
+          // Stocke infos dans options
+          layer.options.nomTopo = item.NOM_TOPO;
+          layer.options.hierarchie = item.HIERARCHI;
+          layer.options.originalColor = getColor(item.HIERARCHI);
+
           layer.bindTooltip(item.NOM_TOPO || 'Route', {
             permanent: false,
             direction: 'top'
           });
-      
-          // 🔥 Attacher directement le NOM_TOPO au layer pour faciliter la comparaison
-          layer.options.nomTopo = item.NOM_TOPO;
-      
-          // 🔥 Click: sélectionne toutes les parties avec le même NOM_TOPO
-          layer.on('click', () => {
-            const streetName = layer.options.nomTopo;
-            const isSelected = layer.options.color === '#FF0000';
-      
-            Object.values(routeLayersByType).forEach(layersArray => {
-              layersArray.forEach(l => {
-                if (l.options.nomTopo === streetName) {
-                  if (isSelected) {
-                    const hierarchie = item.HIERARCHI || 'Autre';
-                    l.setStyle({ color: getColor(hierarchie) });
-                  } else {
-                    l.setStyle({ color: '#FF0000' });
-                  }
-                }
-              });
-            });
-          });
-      
+
           if (!routeLayersByType[type]) routeLayersByType[type] = [];
           routeLayersByType[type].push(layer);
-      
-          // Ajout info pour search
+
           item.fixedCoords = fixedCoords;
         } catch (e) {
           console.error('Erreur parsing route:', item, e);
@@ -156,7 +117,7 @@ const MapPage = () => {
       }
 
       setLayersByType(newLayers);
-      setStreetsData(routeData); // ✅ ici le search aura toutes les rues
+      setStreetsData(routeData);
     })
     .catch(error => {
       console.error('Erreur chargement des données:', error);
@@ -167,17 +128,55 @@ const MapPage = () => {
     };
   }, []);
 
-  const toggleTypeVisibility = (typeName) => {
-    const group = layersByType[typeName];
-    if (!group) return;
-
-    if (mapInstance && mapInstance.hasLayer(group)) {
-      mapInstance.removeLayer(group);
-    } else if (mapInstance) {
-      group.addTo(mapInstance);
+  const toggleTypeVisibility = (typeName, updatedFavorites = favorites) => {
+    if (typeName === 'Favoris') {
+      const nextState = !favorisFilterActive;
+  
+      Object.values(mapInstance._layers).forEach(layer => {
+        if (layer.options && layer.options.nomTopo) {
+          const isFavorite = updatedFavorites.includes(layer.options.nomTopo);
+  
+          if (isFavorite) {
+            if (nextState) {
+              // 🛠️ ACTIVER l'affichage favori : rouge pointillé
+              layer.setStyle({
+                color: '#FF0000',
+                weight: 5,
+                opacity: 1,
+                dashArray: '5,5'
+              });
+              if (layer._path) {
+                layer._path.setAttribute('stroke-dasharray', '5,5');
+              }
+            } else {
+              // 🛠️ DÉSACTIVER l'affichage favori : remettre la couleur originale
+              layer.setStyle({
+                color: layer.options.originalColor || '#000000',
+                weight: 5,
+                opacity: 1,
+                dashArray: null
+              });
+              if (layer._path) {
+                layer._path.removeAttribute('stroke-dasharray');
+              }
+            }
+          }
+        }
+      });
+  
+      setFavorisFilterActive(nextState); // ➔ seulement après avoir fini les changements visuels
+    } else {
+      const group = layersByType[typeName];
+      if (!group) return;
+  
+      if (mapInstance && mapInstance.hasLayer(group)) {
+        mapInstance.removeLayer(group);
+      } else if (mapInstance) {
+        group.addTo(mapInstance);
+      }
     }
   };
-
+  
   return (
     <div style={{
       display: 'flex',
@@ -216,8 +215,8 @@ const MapPage = () => {
           maxHeight: '700px',
           overflowY: 'auto'
         }}>
-          <Legend toggleTypeVisibility={toggleTypeVisibility} />
-          <StreetSearch streetsData={streetsData} map={mapInstance} />
+          <Legend toggleTypeVisibility={(type) => toggleTypeVisibility(type, favorites)} />
+          <StreetSearch streetsData={streetsData} map={mapInstance} favorites={favorites} setFavorites={setFavorites} />
           <Login />
         </div>
       </div>
